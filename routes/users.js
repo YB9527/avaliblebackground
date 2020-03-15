@@ -127,6 +127,7 @@ router.post('/edituser', mu.single(), function (req, res, next) {
                     if(project.user && _id == project.user._id){
                         project.user = user;
                         updateprojects.push(project);
+
                     }
                 }
                 if(updateprojects.length >0 ){
