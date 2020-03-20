@@ -1,5 +1,6 @@
 var express = require('express');
-var JSESSIONIDValue = "D47E331E8DC93A1CFA8688D062DEF828";
+var JSESSIONIDValue = "DF284194538EF0FE102316EF4CFB789B";
+var XieTongUrl = "http://188028ii39.iask.in:40806/";
 var fs = require('fs');
 let join = require('path').join;
 var router = express.Router();
@@ -22,7 +23,7 @@ const superagent = require('superagent');
 
 var linkxietong = function (tip) {
     superagent
-        .get("http://prsmartoa.com:10529/seeyon/getAJAXMessageServlet?V=0.23735389850776678")
+        .get(XieTongUrl+"seeyon/getAJAXMessageServlet?V=0.23735389850776678")
         .set('Cookie', 'JSESSIONID=' + JSESSIONIDValue + '; loginPageURL=; login_locale=zh_CN; avatarImageUrl=-1079369039802711505')
         .set('connection', 'keep-alive')
         .set('Accept', 'application/json')
@@ -60,7 +61,7 @@ var getprojects2 = function (po, callback) {
     sql = sql + '"formId":"-4512940695124425835","formTemplateId":"-4092910636409141342","queryType":"baseSearch"}]';
 
     superagent
-        .post('117.173.87.217:10529/seeyon/ajax.do?method=ajaxAction&managerName=formDataManager&rnd=78833')
+        .post(XieTongUrl+'seeyon/ajax.do?method=ajaxAction&managerName=formDataManager&rnd=78833')
         .type('form')
         .send({managerMethod: 'getFormMasterDataList', arguments: sql})
         .set('Cookie', 'JSESSIONID=' + JSESSIONIDValue + '; loginPageURL=; login_locale=zh_CN; avatarImageUrl=-1079369039802711505')
@@ -111,7 +112,7 @@ router.post('/searchProjectByPo', mu.single(), function (req, res, next) {
 router.get('/lookproject', function (req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     superagent
-        .get('http://prsmartoa.com:10529/seeyon/content/content.do?isFullPage=false&_isModalDialog=false&moduleId=' + req.query.id + '&moduleType=37&rightId=166019245425182503.-4021251945143713249&contentType=20&viewState=2')
+        .get(XieTongUrl+'seeyon/content/content.do?isFullPage=false&_isModalDialog=false&moduleId=' + req.query.id + '&moduleType=37&rightId=166019245425182503.-4021251945143713249&contentType=20&viewState=2')
         .set('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8')
         .set('Accept-Encoding', 'gzip, deflate')
         .set('Accept-Language', 'zh-CN,zh;q=0.9')
@@ -180,7 +181,7 @@ var getshoukuan = function (html) {
 //单个项目页面得到收款记录
 var getprojecthtml = function (id, callback) {
     superagent
-        .get('http://prsmartoa.com:10529/seeyon/content/content.do?isFullPage=false&_isModalDialog=false&moduleId=' + id + '&moduleType=37&rightId=166019245425182503.-4021251945143713249&contentType=20&viewState=2')
+        .get(XieTongUrl+'seeyon/content/content.do?isFullPage=false&_isModalDialog=false&moduleId=' + id + '&moduleType=37&rightId=166019245425182503.-4021251945143713249&contentType=20&viewState=2')
         .set('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8')
         .set('Accept-Encoding', 'gzip, deflate')
         .set('Accept-Language', 'zh-CN,zh;q=0.9')
