@@ -23,7 +23,7 @@ const superagent = require('superagent');
 
 var linkxietong = function (tip) {
     superagent
-        .get(XieTongUrl+"seeyon/getAJAXMessageServlet?V=0.23735389850776678")
+        .get(XieTongUrl + "seeyon/getAJAXMessageServlet?V=0.23735389850776678")
         .set('Cookie', 'JSESSIONID=' + JSESSIONIDValue + '; loginPageURL=; login_locale=zh_CN; avatarImageUrl=-1079369039802711505')
         .set('connection', 'keep-alive')
         .set('Accept', 'application/json')
@@ -48,7 +48,7 @@ startxietong();
 //项目请求
 var getprojects2 = function (po, callback) {
 
-    let sql = '[{"page":'+po.pageindex+',"size":' + po.limit + '},{';
+    let sql = '[{"page":' + po.pageindex + ',"size":' + po.limit + '},{';
     if (po.projectid) {
         sql = sql + '"field0003":"' + po.projectid.trim() + '",';
     }
@@ -61,7 +61,7 @@ var getprojects2 = function (po, callback) {
     sql = sql + '"formId":"-4512940695124425835","formTemplateId":"-4092910636409141342","queryType":"baseSearch"}]';
 
     superagent
-        .post(XieTongUrl+'seeyon/ajax.do?method=ajaxAction&managerName=formDataManager&rnd=78833')
+        .post(XieTongUrl + 'seeyon/ajax.do?method=ajaxAction&managerName=formDataManager&rnd=78833')
         .type('form')
         .send({managerMethod: 'getFormMasterDataList', arguments: sql})
         .set('Cookie', 'JSESSIONID=' + JSESSIONIDValue + '; loginPageURL=; login_locale=zh_CN; avatarImageUrl=-1079369039802711505')
@@ -97,22 +97,26 @@ router.post('/searchProjectByPo', mu.single(), function (req, res, next) {
 
     getprojects2(po, result => {
         let projects = [];
-        for (let d of result.data) {
+        if(result.data){
+            for (let d of result.data) {
 
-            if(d["field0004"] && d["field0004"].length === 9){
-                projects.push(exchangeProject(d));
+                if (d["field0004"] && d["field0004"].length === 9) {
+                    projects.push(exchangeProject(d));
+                }
+
             }
-
+            let custom = {total: result.total, projects: projects};
+            res.send({status: 0, message: "成功", custom: custom});
+        }else{
+            res.send({status: 1, message: "失败", custom: null});
         }
-        let custom = {total:result.total,projects:projects};
-        res.send({status: 0, message: "成功", custom: custom});
     });
 });
 
 router.get('/lookproject', function (req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     superagent
-        .get(XieTongUrl+'seeyon/content/content.do?isFullPage=false&_isModalDialog=false&moduleId=' + req.query.id + '&moduleType=37&rightId=166019245425182503.-4021251945143713249&contentType=20&viewState=2')
+        .get(XieTongUrl + 'seeyon/content/content.do?isFullPage=false&_isModalDialog=false&moduleId=' + req.query.id + '&moduleType=37&rightId=166019245425182503.-4021251945143713249&contentType=20&viewState=2')
         .set('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8')
         .set('Accept-Encoding', 'gzip, deflate')
         .set('Accept-Language', 'zh-CN,zh;q=0.9')
@@ -181,7 +185,7 @@ var getshoukuan = function (html) {
 //单个项目页面得到收款记录
 var getprojecthtml = function (id, callback) {
     superagent
-        .get(XieTongUrl+'seeyon/content/content.do?isFullPage=false&_isModalDialog=false&moduleId=' + id + '&moduleType=37&rightId=166019245425182503.-4021251945143713249&contentType=20&viewState=2')
+        .get(XieTongUrl + 'seeyon/content/content.do?isFullPage=false&_isModalDialog=false&moduleId=' + id + '&moduleType=37&rightId=166019245425182503.-4021251945143713249&contentType=20&viewState=2')
         .set('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8')
         .set('Accept-Encoding', 'gzip, deflate')
         .set('Accept-Language', 'zh-CN,zh;q=0.9')
@@ -196,6 +200,14 @@ var getprojecthtml = function (id, callback) {
             callback(html);
         });
 };
+
+//设置cookie
+router.get("/setcookie", function(req, res, nex) {
+    let getJSESSIONIDValue = req.query.JSESSIONIDValue;
+    JSESSIONIDValue = getJSESSIONIDValue;
+    console.log(getJSESSIONIDValue);
+    res.send({status: 0, message: "成功"});
+});
 
 //前台得到的收款
 router.get('/shoukuan', function (req, res, next) {
@@ -219,7 +231,7 @@ var computedamountcollected = function (avaliblepo, collectionrecord) {
             for (let percentage of avaliblepo.percentages) {
                 let percentageresult = tool.moneySymbol(percentage.percentageresult, false);
                 let result = (collectionrecord.amountcollected / avaliblepo.contrafacevalue * percentageresult).toFixed(2);
-                collectionrecord.percentagepayvalueArray.push(  result);
+                collectionrecord.percentagepayvalueArray.push(result);
                 collectionrecord.percentagevalue = collectionrecord.percentagevalue * 1 + result * 1;
             }
             //分红 分发计算
@@ -306,5 +318,6 @@ var setIntervalRefreshCollectionrecord = function () {
 };
 //定时启动 收款更新
 setIntervalRefreshCollectionrecord();
+
 
 module.exports = router;
