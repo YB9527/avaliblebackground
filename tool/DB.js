@@ -12,17 +12,19 @@ const password = encodeURIComponent('mxy19901012');
 const authMechanism = 'DEFAULT';
 // Connection URL
 
-const url = "mongodb://localhost:27017/";
+
 
 var ObjectID = require('mongodb').ObjectID;
 var mydb;
-
+const url = "mongodb://yb123:yb123@120.79.177.94:27017/?authSource=yb";
 // Use connect method to connect to the Server
 MongoClient.connect(url,(err, client) => {
     try {
        // assert.equal(null, err);
         console.log("Connected correctly to server");
-        mydb = client.db('yb')
+
+       mydb = client.db('yb');
+       console.log(mydb);
 
     }
     catch(err){
@@ -30,6 +32,21 @@ MongoClient.connect(url,(err, client) => {
         console.log("未连接数据库")}
 
 });
+
+
+/*const url = "mongodb://localhost:27017/";
+MongoClient.connect(url,(err, client) => {
+    try {
+        // assert.equal(null, err);
+        console.log("Connected correctly to server");
+        mydb = client.db('yb')
+        console.log(mydb);
+    }
+    catch(err){
+        console.log(err);
+        console.log("未连接数据库")}
+
+});*/
 exports.mydb = mydb;
 
 //查找基本提成方案

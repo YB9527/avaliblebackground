@@ -1,6 +1,7 @@
 var express = require('express');
-var JSESSIONIDValue = "DF284194538EF0FE102316EF4CFB789B";
-var XieTongUrl = "http://188028ii39.iask.in:40806/";
+var JSESSIONIDValue = "24678AE11CC3CCE71D75812BAD1C51BF";
+var XieTongUrl = "http://188028ii39.iask.in/";
+var XieTongHost = "188028ii39.iask.in";
 var fs = require('fs');
 let join = require('path').join;
 var router = express.Router();
@@ -77,6 +78,7 @@ var exchangeProject = function (project) {
     //console.log(1)
     //console.log(project["field0010"].replace(/,/g,""));
     let reg = /,/g;
+
     return {
         projectid: project["field0003"],//项目id
         projectcantractid: project["field0004"],//合同id
@@ -87,9 +89,21 @@ var exchangeProject = function (project) {
         uncollectedamount: parseFloat(project["field0081"].replace(reg, "")),//未收款金额
         unpaidamount: parseFloat(project["field0082"].replace(reg, "")),//未付款金额
         firstparty: project["field0100"],//甲方
+        createdate: project["field0019"],//生效日期
         id: project["id"]
     };
 };
+
+function compateDate(date1, date2) {
+    var oDate1 = new Date(date1);
+    var oDate2 = new Date(date2);
+    if (oDate1.getTime() > oDate2.getTime()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 router.post('/searchProjectByPo', mu.single(), function (req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     //保存对象
@@ -97,17 +111,32 @@ router.post('/searchProjectByPo', mu.single(), function (req, res, next) {
 
     getprojects2(po, result => {
         let projects = [];
-        if(result.data){
+        if (result.data) {
             for (let d of result.data) {
 
                 if (d["field0004"] && d["field0004"].length === 9) {
-                    projects.push(exchangeProject(d));
+                    let project = exchangeProject(d);
+                    // project.createdate =new Date( Date.parse(project.createdate));
+                    /*if(result.data.indexOf(d) === 3){
+                        project.createdate = new Date("2020-3-25");
+                    }*/
+                    projects.push(project);
                 }
-
             }
+
+            for (let i = 0; i < projects.length - 1; i++) {
+                for (let j = 0; j < projects.length - 1 - i; j++) {
+                    if (compateDate(projects[j + 1].createdate, projects[j].createdate)) {
+                        let temp = projects[j];
+                        projects[j] = projects[j + 1];
+                        projects[j + 1] = temp;
+                    }
+                }
+            }
+
             let custom = {total: result.total, projects: projects};
             res.send({status: 0, message: "成功", custom: custom});
-        }else{
+        } else {
             res.send({status: 1, message: "失败", custom: null});
         }
     });
@@ -123,7 +152,7 @@ router.get('/lookproject', function (req, res, next) {
         .set('Cache-Control', 'max-age=0')
         .set('Connection', 'keep-alive')
         .set('Cookie', 'JSESSIONID=' + JSESSIONIDValue + '; login_locale=zh_CN; __guid=28068477.3950336734622592000.1582373183996.012; avatarImageUrl=-1079369039802711505; loginPageURL=; monitor_count=9')
-        .set('Host', 'prsmartoa.com:10529')
+        .set('Host', XieTongHost)
         .set('Upgrade-Insecure-Requests', '1')
         .set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36')
         .then(response => {
@@ -192,20 +221,21 @@ var getprojecthtml = function (id, callback) {
         .set('Cache-Control', 'max-age=0')
         .set('Connection', 'keep-alive')
         .set('Cookie', 'JSESSIONID=' + JSESSIONIDValue + '; login_locale=zh_CN; __guid=28068477.3950336734622592000.1582373183996.012; avatarImageUrl=-1079369039802711505; loginPageURL=; monitor_count=9')
-        .set('Host', 'prsmartoa.com:10529')
+        .set('Host', XieTongHost)
         .set('Upgrade-Insecure-Requests', '1')
         .set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36')
         .then(response => {
+            //console.log(response);
             let html = response.text;
             callback(html);
         });
 };
 
 //设置cookie
-router.get("/setcookie", function(req, res, nex) {
+router.get("/setcookie", function (req, res, nex) {
+    res.header("Access-Control-Allow-Origin", "*");
     let getJSESSIONIDValue = req.query.JSESSIONIDValue;
     JSESSIONIDValue = getJSESSIONIDValue;
-    console.log(getJSESSIONIDValue);
     res.send({status: 0, message: "成功"});
 });
 
@@ -298,6 +328,7 @@ var refreshcollectionrecord = function () {
         if (err)
             return;
         for (let avalibleproject of avalibleprojects) {
+
             refreshrecord(avalibleproject, avalibleproject.xietongproject.id);
         }
 
@@ -319,5 +350,89 @@ var setIntervalRefreshCollectionrecord = function () {
 //定时启动 收款更新
 setIntervalRefreshCollectionrecord();
 
+var getSearchBudget = function (po) {
+    if(!po){
+        po = "";
+    }
+    return {
+        projectid: po.projectid,//项目id
+        projectname: po.name,//项目名称
+        budgetid: po.budgetid,//预算id
+        projectmark: po.projectmark,//预算标识
+        pageindex: po.pageindex,//显示第几页  如果为null 显示 第 1 页
+        limit: po.limit,//每页显示行数的限制   如果为null 显示 20 条数据
+    };
+};
+
+/**
+ * 执行查询 协同项目预算
+ * @param po
+ * @param callback
+ */
+var searchBudget = function (po, callback) {
+
+    if (!po.pageindex || po.pageindex < 1) {
+        po.pageindex = 1;
+    }
+
+    if (!po.limit || po.limit < 1) {
+        po.limit = 20;
+    }
+    let sql = '[{"page":' + po.pageindex + ',"size":' + po.limit + '},{';
+    if (po.projectid) {
+        sql = sql + '"field0001":"' + po.projectid.trim() + '",';
+    }
+    if (po.projectname) {
+        sql = sql + '"field0002":"' + po.projectname.trim() + '",';
+    }
+    if (po.budgetid) {
+        sql = sql + '"field0003":"' + po.budgetid.trim() + '",';
+    }
+    if (po.projectmark) {
+        sql = sql + '"field0021":"' + po.projectmark.trim() + '",';
+    }
+    sql = sql + '"formId":"6930883251913575613","formTemplateId":"-4541273502800525558","queryType":"baseSearch"}]';
+    superagent
+        .post(XieTongUrl + 'seeyon/ajax.do?method=ajaxAction&managerName=formDataManager&rnd=78833')
+        .type('form')
+        .send({managerMethod: 'getFormMasterDataList', arguments: sql})
+        .set('Cookie', 'JSESSIONID=' + JSESSIONIDValue + '; loginPageURL=; login_locale=zh_CN; avatarImageUrl=-1079369039802711505')
+        .then(res => {
+            let result = JSON.parse(res.text);
+            //let projects = result.data;
+            console.log(result);
+            callback(result);
+
+        });
+}
+
+//查询 项目预算
+router.get('/searchbudget', function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+
+    let query = req.query;
+    let searchPo = getSearchBudget(query)
+    searchBudget(searchPo, function (result) {
+        res.send({status: 0, message: "成功", data: result});
+    });
+});
+//查询 项目预算
+router.post('/searchbudget', mu.single(), function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    let query = req.body.searchpo;
+    let searchpo = null;
+    if(query){
+        try {
+            searchpo = JSON.parse(query);
+        }catch (e) {
+            res.send({status: 1, message: "失败，传入的不是json数据"});
+        }
+    }
+    //转换成标准
+    searchpo = getSearchBudget(searchpo);
+    searchBudget(searchpo, function (result) {
+        res.send({status: 0, message: "成功", data: result});
+    });
+});
 
 module.exports = router;
