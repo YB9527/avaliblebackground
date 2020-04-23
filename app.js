@@ -11,6 +11,8 @@ var projectreportsRouter = require('./routes/projectreports');
 var xietongRouter = require('./routes/xietong');
 var levelsRouter = require('./routes/levels');
 var adminRouter = require('./routes/admins');
+var datavRouter = require('./routes/datav');
+
 var app = express();
 
 // view engine setup
@@ -30,6 +32,8 @@ app.use('/projectreports', projectreportsRouter);
 app.use('/xietong', xietongRouter);
 app.use('/levels', levelsRouter);
 app.use('/admins', adminRouter);
+app.use('/datav', datavRouter);
+
 //解决跨域问题
 app.all('*', function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");

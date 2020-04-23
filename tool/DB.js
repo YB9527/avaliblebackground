@@ -24,7 +24,7 @@ MongoClient.connect(url,(err, client) => {
         console.log("Connected correctly to server");
 
        mydb = client.db('yb');
-       console.log(mydb);
+       //console.log(mydb);
 
     }
     catch(err){
@@ -256,7 +256,12 @@ var deletePoByID = function (table,_id,callback) {
 };
 exports.deletePoByID = deletePoByID;
 
-//根据sql 删除 对象
+/**
+ * 根据sql 删除 对象
+ * @param table
+ * @param sql
+ * @param callback
+ */
 var deletePoBySQL =function (table,sql,callback) {
     mydb.collection(table).deleteMany(sql, function(err, obj) {
         callback(err,obj);
